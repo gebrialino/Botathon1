@@ -1,0 +1,16 @@
+{
+    "configurations": [
+        {
+            "type": "chrome",
+            "name": "http://127.0.0.1:3000/p5.html",
+            "request": "launch",
+            "url": "http://127.0.0.1:3000/p5.html"
+        },
+        {
+            "type": "chrome",
+            "name": "http://127.0.0.1:3000/pfinal/index.html",
+            "request": "launch",
+            "url": "http://127.0.0.1:3000/pfinal/index.html"
+        }
+    ]
+}

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Teletón - Botathon Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="css/p7.css">
+</head>
+
+<body>
+
+    <div id="auth-view" class="auth-container fade-in">
+
+        <div id="login-card" class="auth-card">
+            <div class="logo-area">
+                <i class="fa-solid fa-heart-pulse"></i>
+                <h1>Teletón <span id="year-tag">2025</span></h1>
+                <p style="color:var(--text-gray)">Plataforma de Gestión Integral</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); login();">
+                <div class="input-group">
+                    <label>Correo (@teleton.cl o Personal)</label>
+                    <input type="text" id="login-email" placeholder="ej: jua.perez@teleton.cl" required>
+                </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-pass" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary">Ingresar <i class="fa-solid fa-arrow-right"></i></button>
+            </form>
+
+            <button class="btn-link" onclick="toggleAuth('register')">Es tu primera vez ,valida tu cuenta aqui</button>
+        </div>
+
+        <div id="register-card" class="auth-card hidden">
+            <div class="logo-area" style="margin-bottom: 20px;">
+                <h1>Validar Cuenta</h1>
+                <p style="color:var(--text-gray)">Botathon Access</p>
+            </div>
+
+            <form id="register-form" onsubmit="event.preventDefault(); register();">
+                <div style="display: flex; gap: 10px;">
+                    <div class="input-group" style="flex:1">
+                        <label>Nombre</label>
+                        <input type="text" id="reg-name" placeholder="Ej: Ana" required oninput="updateEmailPreview()">
+                    </div>
+                    <div class="input-group" style="flex:1">
+                        <label>Apellido</label>
+                        <input type="text" id="reg-surname" placeholder="Ej: Toro" required
+                            oninput="updateEmailPreview()">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label><i class="fa-solid fa-id-card"></i> Cuenta Teletón (Autogenerada)</label>
+                    <input type="text" id="reg-generated-email" class="input-generated"
+                        placeholder="nom.apellido@teleton.cl" readonly tabindex="-1">
+                </div>
+
+                <div class="input-group">
+                    <label>Correo Personal (Contacto)</label>
+                    <input type="email" id="reg-personal-email" placeholder="ej: ana.toro@gmail.com" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Teléfono Móvil</label>
+                    <input type="tel" id="reg-phone" placeholder="+56 9 ..." required>
+                </div>
+
+                <div class="input-group">
+                    <label>Rol en la Organización (Asignado Automáticamente)</label>
+                    <select id="reg-role" required>
+                        <option value="" disabled selected>Asignando rol...</option>
+                        <option value="coordinador">Coordinador(a)</option>
+                        <option value="social">Jefe de Gestión Social</option>
+                        <option value="admin_programas">Admin. Programas</option>
+                        <option value="turnos">Profesional Org. Turnos</option>
+                        <option value="comunicaciones">Gestión Comunicaciones</option>
+                        <option value="retencion">Retención e Integración</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Crear Contraseña</label>
+                    <input type="password" id="reg-pass" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Validar Cuenta</button>
+            </form>
+            <button class="btn-link" onclick="toggleAuth('login')">Volver al inicio de sesión</button>
+        </div>
+    </div>
+
+    <div id="dashboard-view" class="dashboard-layout hidden">
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-heart-pulse"></i> TeletónApp
+            </div>
+
+            <div class="user-profile">
+                <div class="avatar" id="nav-avatar">JP</div>
+                <div style="font-size: 0.9rem; line-height: 1.2;">
+                    <div id="nav-name" style="font-weight: 600;">Juan Perez</div>
+                    <div id="nav-role" style="color: var(--text-gray); font-size: 0.75rem;">Coordinador</div>
+                </div>
+            </div>
+
+            <nav>
+                <div class="menu-item active"><i class="fa-solid fa-gauge"></i> <span>Panel Principal</span></div>
+                <div class="menu-item"><i class="fa-solid fa-calendar-days"></i> <span>Agenda</span></div>
+                <div class="menu-item"><i class="fa-solid fa-users"></i> <span>Pacientes</span></div>
+                <div class="menu-item"><i class="fa-solid fa-chart-pie"></i> <span>Reportes</span></div>
+            </nav>
+
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i> <span>Cerrar Sesión</span>
+            </div>
+        </aside>
+
+        <main class="main-content fade-in">
+            <header class="header-dash">
+                <div>
+                    <h2 id="dash-title">Bienvenido</h2>
+                    <p style="color:var(--text-gray)" id="dash-subtitle">Resumen de actividad para hoy</p>
+                </div>
+                <div class="role-badge" id="dash-badge">ROL</div>
+            </header>
+
+            <div id="dynamic-content">
+            </div>
+        </main>
+    </div>
+
+    <script src="js/p7.js"></script>
+</body>
+
+</html>

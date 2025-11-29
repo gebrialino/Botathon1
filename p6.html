@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Teletón - Botathon Edition</title>
+    <!-- Importar Fuente Poppins para look moderno -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Iconos FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="css/p6.css">
+</head>
+
+<body>
+
+    <!-- 1. AUTH SECTION -->
+    <div id="auth-view" class="auth-container fade-in">
+
+        <!-- Login Form -->
+        <div id="login-card" class="auth-card">
+            <div class="logo-area">
+                <i class="fa-solid fa-heart-pulse"></i>
+                <h1>Teletón <span id="year-tag">2025</span></h1>
+                <p style="color:var(--text-gray)">Plataforma de Gestión Integral</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); login();">
+                <div class="input-group">
+                    <label>Correo (@teleton.cl o Personal)</label>
+                    <input type="text" id="login-email" placeholder="ej: jua.perez@teleton.cl" required>
+                </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-pass" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary">Ingresar <i class="fa-solid fa-arrow-right"></i></button>
+            </form>
+
+            <button class="btn-link" onclick="toggleAuth('register')">Es tu primera vez ,valida tu cuenta aqui</button>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-card" class="auth-card hidden">
+            <div class="logo-area" style="margin-bottom: 20px;">
+                <h1>Validar Cuenta</h1>
+                <p style="color:var(--text-gray)">Botathon Access</p>
+            </div>
+
+            <form id="register-form" onsubmit="event.preventDefault(); register();">
+                <div class="input-group">
+                    <label>Nombre</label>
+                    <input type="text" id="reg-name" oninput="updateEmailPreview()" required>
+                </div>
+                <div class="input-group">
+                    <label>Apellido</label>
+                    <input type="text" id="reg-surname" oninput="updateEmailPreview()" required>
+                </div>
+                <div class="input-group">
+                    <label>Correo Teletón</label>
+                    <input type="text" id="reg-generated-email" class="input-generated" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Correo Personal</label>
+                    <input type="email" id="reg-personal-email" placeholder="tu@email.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="reg-phone" placeholder="+56 9..." required>
+                </div>
+                <div class="input-group">
+                    <label>Rol en la Institución</label>
+                    <div style="display:flex; gap:10px;">
+                        <select id="reg-role" required>
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option value="coordinador">Coordinador(a)</option>
+                            <option value="social">Gestión Social</option>
+                            <option value="admin_programas">Admin. Programas</option>
+                            <option value="turnos">Org. Turnos</option>
+                            <option value="comunicaciones">Comunicaciones</option>
+                            <option value="retencion">Retención</option>
+                        </select>
+                        <button type="button" class="btn-random" onclick="randomizeRole()"
+                            title="Asignar Rol Aleatorio (Demo)">
+                            <i class="fa-solid fa-shuffle"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="reg-pass" required>
+                </div>
+                <button type="submit" class="btn-primary">Registrar y Acceder</button>
+            </form>
+
+            <button class="btn-link" onclick="toggleAuth('login')">Volver al Login</button>
+        </div>
+    </div>
+
+    <!-- 2. DASHBOARD SECTION -->
+    <div id="dashboard-view" class="dashboard-layout hidden fade-in">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-heart-pulse"></i> TeletónCC
+            </div>
+
+            <div class="user-profile">
+                <div class="avatar" id="nav-avatar">U</div>
+                <div>
+                    <div style="font-weight:bold; font-size:0.9rem;" id="nav-name">Usuario</div>
+                    <div style="font-size:0.75rem; color:var(--text-gray);" id="nav-role">Rol</div>
+                </div>
+            </div>
+
+            <nav>
+                <div class="menu-item active">
+                    <i class="fa-solid fa-house"></i> <span>Inicio</span>
+                </div>
+                <div class="menu-item">
+                    <i class="fa-solid fa-calendar"></i> <span>Agenda</span>
+                </div>
+                <div class="menu-item">
+                    <i class="fa-solid fa-users"></i> <span>Pacientes</span>
+                </div>
+                <div class="menu-item">
+                    <i class="fa-solid fa-chart-pie"></i> <span>Reportes</span>
+                </div>
+                <div class="menu-item">
+                    <i class="fa-solid fa-gear"></i> <span>Configuración</span>
+                </div>
+            </nav>
+
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i> <span>Cerrar Sesión</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header-dash">
+                <div>
+                    <h2 id="dash-title">Hola, Usuario</h2>
+                    <p style="color:var(--text-gray)">Aquí está lo que sucede hoy en tu área.</p>
+                </div>
+                <div class="role-badge" id="dash-badge">ROL</div>
+            </div>
+
+            <!-- DYNAMIC CONTENT AREA -->
+            <div id="dynamic-content">
+                <!-- Injected by JS -->
+            </div>
+        </main>
+    </div>
+
+    <script src="js/p6.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,858 @@
+// --- Estado Global ---
+let state = {
+    view: 'auth',
+    user: null,
+    isLoggedIn: false
+};
+
+// --- Definición de Roles ---
+const ROLES = {
+    COORD: 'Coordinador(a)',
+    JEFE_SOCIAL: 'Jefe de Gestión Social',
+    ADMIN_PROG: 'Equipo Admin. Programas',
+    ORG_TURNOS: 'Profesional Org. Turnos',
+    COMMS: 'Gestión de Comunicaciones',
+    RETENCION: 'Equipo Retención e Integración'
+};
+
+// --- Datos Simulados (PERSISTENTES en la sesión) ---
+const registeredUsers = [
+    { username: 'admin', password: '1234', name: 'Vanessa Román', lastname: 'Admin', role: ROLES.COORD, email: 'admin@teleton.cl' }
+];
+
+// --- Dashboard Renderers por Rol ---
+
+// 1. Dashboard Coordinador (Global)
+function renderDashboardCoord() {
+    return `
+        <div class="space-y-8 fade-in text-gray-100">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight">Panel General</h2>
+                    <p class="text-gray-400">Visión 360° del ecosistema de voluntariado.</p>
+                </div>
+                <span class="bg-gray-800 text-white px-3 py-1 rounded-lg text-xs font-bold border border-gray-700">Vista Global</span>
+            </div>
+            <!-- KPIs Globales -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                ${renderKpiCard('Cobertura Hoy', '95%', 'text-white', 'ph-chart-pie-slice', 'bg-gray-800')}
+                ${renderKpiCard('Total Voluntarios', '1,240', 'text-white', 'ph-users', 'bg-gray-800')}
+                ${renderKpiCard('Riesgo Deserción', '45', 'text-brand-purple', 'ph-warning', 'bg-gray-800')}
+                ${renderKpiCard('Alertas Activas', '3', 'text-brand-red', 'ph-bell', 'bg-gray-800')}
+            </div>
+            <!-- Accesos Rápidos -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-gray-900 rounded-2xl border border-gray-800 p-6">
+                    <h3 class="font-bold mb-4">Estado de Módulos</h3>
+                    <div class="space-y-3">
+                        ${renderStatusRow('Voluntai', 'Operativo', 'bg-brand-blue')}
+                        ${renderStatusRow('Continuai', 'Analizando', 'bg-brand-purple animate-pulse')}
+                        ${renderStatusRow('Campus', 'Actualizado', 'bg-brand-green')}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
+// 2. Dashboard Jefe Social (Humano/Estratégico)
+function renderDashboardSocial() {
+    return `
+        <div class="space-y-8 fade-in text-gray-100">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight text-brand-orange">Gestión Social</h2>
+                    <p class="text-gray-400">Clima, satisfacción y diversidad del equipo.</p>
+                </div>
+                <span class="bg-brand-orange/20 text-brand-orange px-3 py-1 rounded-lg text-xs font-bold border border-brand-orange/30">Estrategia</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${renderKpiCard('Satisfacción', '4.8/5', 'text-brand-orange', 'ph-smiley', 'bg-gray-900 border-brand-orange/30')}
+                ${renderKpiCard('Índice Diversidad', '88%', 'text-brand-orange', 'ph-users-three', 'bg-gray-900 border-brand-orange/30')}
+                ${renderKpiCard('NPS Voluntario', '+72', 'text-brand-orange', 'ph-thumbs-up', 'bg-gray-900 border-brand-orange/30')}
+            </div>
+            <div class="bg-gray-900 rounded-2xl border border-brand-orange/20 p-6">
+                <h3 class="text-xl font-bold mb-4 text-white">Recomendaciones Match IA</h3>
+                <p class="text-gray-400 text-sm mb-4">Grupos sugeridos para mejorar la integración en la próxima actividad:</p>
+                <div class="flex gap-4 overflow-x-auto pb-2">
+                    ${renderMatchCard('Equipo A', 'Mix Generacional', 'Alto')}
+                    ${renderMatchCard('Equipo B', 'Mix de Programas', 'Medio')}
+                </div>
+            </div>
+        </div>`;
+}
+
+// 3. Dashboard Admin Programas (Operativo)
+function renderDashboardProg() {
+    return `
+        <div class="space-y-8 fade-in text-gray-100">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight text-brand-green">Programas y Formación</h2>
+                    <p class="text-gray-400">Capacitación y despliegue técnico.</p>
+                </div>
+                <span class="bg-brand-green/20 text-brand-green px-3 py-1 rounded-lg text-xs font-bold border border-brand-green/30">Operaciones</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${renderKpiCard('Certificados Hoy', '124', 'text-brand-green', 'ph-certificate', 'bg-gray-900 border-brand-green/30')}
+                ${renderKpiCard('Asistencia Prom.', '92%', 'text-brand-green', 'ph-check-circle', 'bg-gray-900 border-brand-green/30')}
+                ${renderKpiCard('Cursos Críticos', '2', 'text-red-400', 'ph-warning-circle', 'bg-gray-900 border-brand-green/30')}
+            </div>
+            <div class="bg-gray-900 rounded-2xl border border-brand-green/20 p-6">
+                <h3 class="text-xl font-bold mb-4 text-white">Avance Campus Teletón</h3>
+                ${renderProgressBar('Lengua de Señas', 75, 'bg-brand-green')}
+                ${renderProgressBar('Primeros Auxilios', 45, 'bg-yellow-500')}
+                ${renderProgressBar('Protocolo COVID', 90, 'bg-blue-500')}
+            </div>
+        </div>`;
+}
+
+// 4. Dashboard Org. Turnos (Logística)
+function renderDashboardTurnos() {
+    return `
+        <div class="space-y-8 fade-in text-gray-100">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight text-brand-blue">Control de Turnos</h2>
+                    <p class="text-gray-400">Logística, asistencia y reemplazos.</p>
+                </div>
+                <span class="bg-brand-blue/20 text-brand-blue px-3 py-1 rounded-lg text-xs font-bold border border-brand-blue/30">Logística</span>
+            </div>
+            <div class="bg-brand-blue/10 border border-brand-blue/30 p-4 rounded-xl flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <i class="ph-fill ph-robot text-2xl text-brand-blue"></i>
+                    <div>
+                        <h4 class="font-bold text-white">Voluntai Sugiere:</h4>
+                        <p class="text-xs text-brand-blue">Hay 3 turnos descubiertos para mañana PM. ¿Activar búsqueda?</p>
+                    </div>
+                </div>
+                <button class="bg-brand-blue text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-600 transition">Ejecutar</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                ${renderKpiCard('Turnos AM', '100% OK', 'text-green-400', 'ph-sun', 'bg-gray-900')}
+                ${renderKpiCard('Turnos PM', '3 Bajas', 'text-red-400', 'ph-moon', 'bg-gray-900 border-red-500/30')}
+                ${renderKpiCard('Solicitudes Cambio', '12', 'text-yellow-400', 'ph-arrows-left-right', 'bg-gray-900')}
+                ${renderKpiCard('Ausentismo', '1.2%', 'text-gray-400', 'ph-trend-down', 'bg-gray-900')}
+            </div>
+        </div>`;
+}
+
+// 5. Dashboard Comunicaciones
+function renderDashboardComms() {
+    return `
+        <div class="space-y-8 fade-in text-gray-100">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight text-brand-cyan">Comunicaciones</h2>
+                    <p class="text-gray-400">Difusión, alertas y notificaciones.</p>
+                </div>
+                <span class="bg-brand-cyan/20 text-brand-cyan px-3 py-1 rounded-lg text-xs font-bold border border-brand-cyan/30">Difusión</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2 bg-gray-900 rounded-2xl border border-brand-cyan/20 p-6">
+                    <h3 class="font-bold mb-4 flex items-center gap-2"><i class="ph-bold ph-paper-plane-right text-brand-cyan"></i> Enviar Alerta Rápida</h3>
+                    <textarea class="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-sm text-white focus:border-brand-cyan outline-none mb-4" rows="3" placeholder="Escribe tu mensaje para todos los voluntarios activos..."></textarea>
+                    <div class="flex justify-end gap-2">
+                        <button class="text-gray-400 text-xs font-bold px-4 py-2 hover:text-white">Programar</button>
+                        <button class="bg-brand-cyan text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-cyan-600">Enviar Ahora</button>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    ${renderKpiCard('Lectura Notif.', '89%', 'text-brand-cyan', 'ph-eye', 'bg-gray-900')}
+                    ${renderKpiCard('Consultas Bot', '450', 'text-brand-cyan', 'ph-chat-circle-text', 'bg-gray-900')}
+                </div>
+            </div>
+        </div>`;
+}
+
+// 6. Dashboard Retención (Continuai)
+function renderDashboardRetencion() {
+    return `
+        <div class="space-y-8 fade-in text-gray-100">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight text-brand-purple">Retención (Continuai)</h2>
+                    <p class="text-gray-400">Predicción de riesgo y fidelización.</p>
+                </div>
+                <span class="bg-brand-purple/20 text-brand-purple px-3 py-1 rounded-lg text-xs font-bold border border-brand-purple/30">Fidelización</span>
+            </div>
+            
+            <div class="flex gap-4 overflow-x-auto pb-4">
+                <div class="min-w-[250px] bg-red-900/20 border border-red-500/50 p-5 rounded-2xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-red-400">Riesgo Alto</h3>
+                        <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-4">Voluntarios críticos. Acción inmediata requerida.</p>
+                    <button class="w-full bg-red-600/20 hover:bg-red-600 text-red-100 py-2 rounded-lg text-xs font-bold transition border border-red-500/30">Contactar Grupo</button>
+                </div>
+                <div class="min-w-[250px] bg-yellow-900/20 border border-yellow-500/50 p-5 rounded-2xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-yellow-400">Riesgo Medio</h3>
+                        <span class="bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full">33</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-4">Baja participación reciente. Enviar incentivo.</p>
+                    <button class="w-full bg-yellow-600/20 hover:bg-yellow-600 text-yellow-100 py-2 rounded-lg text-xs font-bold transition border border-yellow-500/30">Plan Fidelización</button>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-2xl border border-brand-purple/20 p-6">
+                <h3 class="font-bold mb-4 text-white">Últimas Alertas de IA</h3>
+                <div class="space-y-3">
+                    ${renderAlertRow('Juan Pérez', 'Ausencia reiterada (3 turnos)', 'Alta')}
+                    ${renderAlertRow('Ana Díaz', 'Feedback negativo en encuesta', 'Media')}
+                    ${renderAlertRow('Carlos Ruiz', 'No ha tomado turnos en 20 días', 'Media')}
+                </div>
+            </div>
+        </div>`;
+}
+
+// --- Helper Renderers ---
+function renderKpiCard(title, value, colorClass, icon, bgClass) {
+    return `
+        <div class="${bgClass} p-5 rounded-2xl border border-gray-800 shadow-sm flex flex-col justify-between h-32">
+            <div class="flex justify-between items-start">
+                <span class="text-gray-500 text-xs font-bold uppercase">${title}</span>
+                <i class="ph-fill ${icon} text-xl ${colorClass.replace('text-', 'text-opacity-80 ')}"></i>
+            </div>
+            <h3 class="text-3xl font-bold ${colorClass}">${value}</h3>
+        </div>`;
+}
+
+function renderStatusRow(name, status, colorClass) {
+    return `
+        <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+            <span class="text-sm font-bold text-gray-300">${name}</span>
+            <span class="${colorClass} text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">${status}</span>
+        </div>`;
+}
+
+function renderProgressBar(label, percent, colorClass) {
+    return `
+        <div class="mb-4">
+            <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-300 font-bold">${label}</span>
+                <span class="text-gray-500">${percent}%</span>
+            </div>
+            <div class="w-full bg-gray-800 rounded-full h-2">
+                <div class="${colorClass} h-2 rounded-full" style="width: ${percent}%"></div>
+            </div>
+        </div>`;
+}
+
+function renderMatchCard(title, subtitle, priority) {
+    return `
+        <div class="min-w-[200px] bg-gray-800 p-4 rounded-xl border border-gray-700">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center text-white font-bold text-xs"><i class="ph-bold ph-users"></i></div>
+                <div>
+                    <h4 class="text-sm font-bold text-white">${title}</h4>
+                    <p class="text-[10px] text-gray-400">${subtitle}</p>
+                </div>
+            </div>
+            <div class="mt-2 flex justify-between items-center">
+                <span class="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300">Prioridad ${priority}</span>
+                <button class="text-brand-orange hover:text-white transition"><i class="ph-bold ph-check-circle text-xl"></i></button>
+            </div>
+        </div>`;
+}
+
+function renderAlertRow(name, reason, priority) {
+    const color = priority === 'Alta' ? 'text-red-500' : 'text-yellow-500';
+    return `
+        <div class="flex items-center justify-between p-3 hover:bg-gray-800 rounded-xl transition cursor-pointer">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${name.charAt(0)}</div>
+                <div>
+                    <p class="text-sm font-bold text-white">${name}</p>
+                    <p class="text-xs text-gray-500">${reason}</p>
+                </div>
+            </div>
+            <span class="text-xs font-bold ${color}">${priority}</span>
+        </div>`;
+}
+
+// --- Auth Functions (Login/Register) ---
+
+function renderLogin() {
+    return `
+        <div class="bg-gray-800 p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-700 fade-in relative overflow-hidden">
+            <div class="text-center mb-6">
+                <div class="inline-flex bg-red-600 text-white p-3 rounded-2xl shadow-lg shadow-red-600/30 mb-4">
+                    <i class="ph-fill ph-fingerprint text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white tracking-tight">Iniciar Sesión</h1>
+                <p class="text-gray-400 text-xs mt-1">Acceso seguro a Teletón Control Center</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); preLogin()" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase ml-1">Usuario o Correo</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-3 text-gray-400"><i class="ph-bold ph-user"></i></span>
+                        <input id="login-user" type="text" placeholder="Ej: admin" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 focus:border-red-500 outline-none text-white text-sm" required>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase ml-1">Contraseña</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-3 text-gray-400"><i class="ph-bold ph-lock-key"></i></span>
+                        <input id="login-pass" type="password" placeholder="••••" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 focus:border-red-500 outline-none text-white text-sm" required>
+                    </div>
+                </div>
+                
+                <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center">Credenciales incorrectas</div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm">
+                    Ingresar
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-gray-700">
+                <button onclick="renderView('qr')" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 mb-3">
+                    <i class="ph-bold ph-qr-code"></i> Ingresar con Credencial
+                </button>
+                <p class="text-center text-xs text-gray-500">
+                    ¿No tienes cuenta? <button onclick="renderView('register')" class="text-red-500 font-bold hover:underline">Obtener Cuenta</button>
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+function renderRegister() {
+    const roleValues = Object.values(ROLES);
+    const randomRole = roleValues[Math.floor(Math.random() * roleValues.length)];
+
+    return `
+        <div class="bg-gray-800 p-8 rounded-3xl shadow-2xl w-full max-w-md border border-gray-700 fade-in relative overflow-hidden my-4">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-white">Obtener Cuenta</h1>
+                <p class="text-gray-400 text-xs">Registro de personal administrativo</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); handleRegister('${randomRole}')" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Nombre</label>
+                        <input id="reg-name" type="text" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-sm" required oninput="updateInstitutionalEmail()">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Apellido</label>
+                        <input id="reg-lastname" type="text" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-sm" required oninput="updateInstitutionalEmail()">
+                    </div>
+                </div>
+
+                <!-- NEW RUT FIELD -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">RUT</label>
+                    <input id="reg-rut" type="text" placeholder="12.345.678-9" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-sm" required>
+                </div>
+
+                <!-- NEW PHONE FIELD -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Número de Teléfono</label>
+                    <input id="reg-phone" type="tel" placeholder="+56 9 1234 5678" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-sm" required>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Correo Personal</label>
+                    <input id="reg-email" type="email" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-sm" required>
+                </div>
+
+                <!-- AUTO GENERATED EMAIL FIELD -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Correo Institucional (Auto-generado)</label>
+                    <input id="reg-inst-email" type="text" placeholder="ejemplo : val.roman@teleton.cl" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-400 text-sm cursor-not-allowed select-none" disabled>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Rol Asignado por Sistema</label>
+                    <div class="relative group">
+                        <input id="reg-role-display" type="text" value="${randomRole}" disabled class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-brand-red font-bold text-sm cursor-not-allowed select-none shadow-inner">
+                        <i class="ph-fill ph-lock-key absolute right-3 top-2.5 text-gray-500"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Contraseña</label>
+                    <input id="reg-pass" type="password" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-sm" required>
+                </div>
+
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg mt-4 text-sm transition">
+                    Obtener Acceso
+                </button>
+            </form>
+
+             <p class="text-center text-xs text-gray-500 mt-4">
+                <button onclick="renderView('login')" class="text-gray-400 hover:text-white">Volver al Login</button>
+            </p>
+        </div>
+    `;
+}
+
+function updateInstitutionalEmail() {
+    const name = document.getElementById('reg-name').value.trim().toLowerCase();
+    const lastname = document.getElementById('reg-lastname').value.trim().toLowerCase();
+    const emailField = document.getElementById('reg-inst-email');
+
+    // Helper to remove accents
+    const removeAccents = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    if (name && lastname) {
+        // First 3 chars of name + dot + first word of lastname
+        const cleanName = removeAccents(name.split(' ')[0]).substring(0, 3);
+        const cleanLastname = removeAccents(lastname.split(' ')[0]);
+        emailField.value = `${cleanName}.${cleanLastname}@teleton.cl`;
+    } else {
+        emailField.value = '';
+    }
+}
+
+function renderRoleReveal(role) {
+    return `
+        <div class="bg-gray-800 p-10 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-700 animate-pop-in relative overflow-hidden text-center">
+            <div class="absolute inset-0 bg-gradient-to-br from-red-600/10 to-blue-600/10 pointer-events-none"></div>
+            
+            <div class="mb-6">
+                <div class="w-20 h-20 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl shadow-yellow-500/20 animate-bounce">
+                    <i class="ph-fill ph-crown text-4xl text-white"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-1">¡Cuenta Creada!</h2>
+                <p class="text-gray-400 text-xs">Confirmando tu perfil operativo:</p>
+            </div>
+
+            <div class="bg-gray-900/80 p-6 rounded-2xl border border-gray-600 mb-8 relative group">
+                <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gray-700 text-[10px] text-gray-300 px-3 py-1 rounded-full uppercase font-bold tracking-wider border border-gray-600">
+                    Rol Activo
+                </div>
+                <h3 class="text-xl font-bold text-brand-red leading-tight mt-2">${role}</h3>
+                <div class="mt-3 text-xs text-gray-500">Interfaz personalizada cargada.</div>
+            </div>
+
+            <button onclick="renderView('login')" class="w-full bg-white hover:bg-gray-200 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition text-sm">
+                Ir a Iniciar Sesión
+            </button>
+        </div>
+    `;
+}
+
+function render2FA() {
+    return `
+         <div class="bg-gray-800 p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-700 fade-in text-center">
+            <div class="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-700">
+                <i class="ph-bold ph-shield-check text-3xl text-green-500"></i>
+            </div>
+            <h1 class="text-xl font-bold text-white mb-2">Seguridad</h1>
+            <p class="text-gray-400 text-xs mb-6">Hemos enviado un código a su dispositivo.</p>
+
+            <div class="flex justify-center gap-2 mb-6">
+                <input type="text" value="4" class="w-10 h-12 text-center text-xl font-bold rounded-lg bg-gray-900 border border-gray-700 text-white focus:border-red-500 outline-none">
+                <input type="text" value="2" class="w-10 h-12 text-center text-xl font-bold rounded-lg bg-gray-900 border border-gray-700 text-white focus:border-red-500 outline-none">
+                <input type="text" value="9" class="w-10 h-12 text-center text-xl font-bold rounded-lg bg-gray-900 border border-gray-700 text-white focus:border-red-500 outline-none">
+                <span class="text-2xl text-gray-500 self-center">-</span>
+                <input type="text" class="w-10 h-12 text-center text-xl font-bold rounded-lg bg-gray-900 border border-gray-700 text-white focus:border-red-500 outline-none animate-pulse border-red-500">
+                <input type="text" class="w-10 h-12 text-center text-xl font-bold rounded-lg bg-gray-900 border border-gray-700 text-white focus:border-red-500 outline-none">
+                <input type="text" class="w-10 h-12 text-center text-xl font-bold rounded-lg bg-gray-900 border border-gray-700 text-white focus:border-red-500 outline-none">
+            </div>
+
+            <button onclick="completeLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm mb-4">
+                Validar Ingreso
+            </button>
+        </div>
+    `;
+}
+
+function renderQRScan() {
+    return `
+         <div class="bg-gray-800 p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-700 fade-in text-center relative overflow-hidden">
+            <h1 class="text-xl font-bold text-white mb-6">Escaneando Credencial</h1>
+            <div class="w-48 h-48 mx-auto bg-black rounded-2xl relative overflow-hidden border-2 border-gray-600 mb-6">
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/20 to-transparent w-full h-8 animate-scan top-0 z-10 opacity-50"></div>
+                <div class="absolute inset-0 flex items-center justify-center"><i class="ph-fill ph-qr-code text-6xl text-gray-700"></i></div>
+                <div class="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-red-500"></div>
+                <div class="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-red-500"></div>
+                <div class="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-red-500"></div>
+                <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-red-500"></div>
+            </div>
+            <button onclick="completeLogin()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition text-sm mb-2">Simular Escaneo Exitoso</button>
+            <button onclick="renderView('login')" class="text-xs text-gray-500 hover:text-white">Volver</button>
+        </div>
+    `;
+}
+
+// --- Auth Logic ---
+
+function handleRegister(assignedRole) {
+    const name = document.getElementById('reg-name').value;
+    const lastname = document.getElementById('reg-lastname').value;
+    const rut = document.getElementById('reg-rut').value;
+    const phone = document.getElementById('reg-phone').value;
+    const email = document.getElementById('reg-email').value;
+    const instEmail = document.getElementById('reg-inst-email').value;
+    const password = document.getElementById('reg-pass').value;
+
+    // Use institutional email prefix as username
+    const username = instEmail.split('@')[0];
+
+    const newUser = { username, password, name, lastname, rut, phone, role: assignedRole, email: instEmail, personalEmail: email };
+    registeredUsers.push(newUser);
+    // No auto-login: user must login manually
+
+    const container = document.getElementById('auth-container');
+    container.innerHTML = renderRoleReveal(assignedRole);
+}
+
+function preLogin() {
+    const userInput = document.getElementById('login-user').value;
+    const pass = document.getElementById('login-pass').value;
+    const foundUser = registeredUsers.find(u => (u.username === userInput || u.email === userInput) && u.password === pass);
+
+    if (foundUser) {
+        state.user = foundUser;
+        renderView('2fa');
+    } else {
+        document.getElementById('login-error').classList.remove('hidden');
+    }
+}
+
+function completeLogin() {
+    // Handle QR Simulation case where state.user is null
+    if (!state.user) {
+        // Default to Admin if accessed via QR without prior login context
+        state.user = registeredUsers[0];
+    }
+
+    state.isLoggedIn = true;
+    const auth = document.getElementById('auth-container');
+    const app = document.getElementById('app-container');
+    auth.classList.add('-translate-y-full', 'opacity-0');
+    app.classList.remove('opacity-0', 'pointer-events-none');
+    setTimeout(() => auth.classList.add('hidden'), 700);
+    setupDashboard();
+    navigate('dashboard');
+}
+
+function renderView(viewName) {
+    const container = document.getElementById('auth-container');
+    if (viewName === 'login') container.innerHTML = renderLogin();
+    if (viewName === 'register') container.innerHTML = renderRegister();
+    if (viewName === '2fa') container.innerHTML = render2FA();
+    if (viewName === 'qr') container.innerHTML = renderQRScan();
+}
+
+function logout() {
+    // 1. Reset State
+    state.isLoggedIn = false;
+    state.user = null;
+
+    // 2. Reset UI
+    const auth = document.getElementById('auth-container');
+    const app = document.getElementById('app-container');
+
+    // Mostrar Auth Container nuevamente
+    auth.classList.remove('hidden');
+
+    // Animación de regreso
+    requestAnimationFrame(() => {
+        auth.classList.remove('-translate-y-full', 'opacity-0');
+        app.classList.add('opacity-0', 'pointer-events-none');
+    });
+
+    // 3. Renderizar Login Limpio
+    renderView('login');
+}
+
+// --- Dashboard Logic ---
+
+function setupDashboard() {
+    document.getElementById('user-name-display').innerText = `${state.user.name} ${state.user.lastname}`;
+    document.getElementById('user-role-display').innerText = state.user.role;
+    document.getElementById('user-avatar').innerText = (state.user.name[0] + state.user.lastname[0]).toUpperCase();
+
+    const navContainer = document.getElementById('sidebar-nav');
+    let navHTML = '';
+
+    // Common Item
+    navHTML += createNavItem('dashboard', 'Inicio', 'ph-squares-four', 'text-white bg-gray-800');
+
+    const role = state.user.role;
+
+    // Conditional Menu Items based on Role
+    if (role === ROLES.COORD) {
+        navHTML += buildSectionHeader('Gestión Global');
+        navHTML += createNavItem('voluntai', 'Voluntai AI', 'ph-robot');
+        navHTML += createNavItem('continuai', 'Continuai', 'ph-chart-line-up');
+        navHTML += createNavItem('campus', 'Campus', 'ph-graduation-cap');
+    } else if (role === ROLES.JEFE_SOCIAL) {
+        navHTML += buildSectionHeader('Social');
+        navHTML += createNavItem('match', 'Match Integración', 'ph-users-three');
+        navHTML += createNavItem('continuai', 'Retención', 'ph-chart-line-up');
+    } else if (role === ROLES.ADMIN_PROG) {
+        navHTML += buildSectionHeader('Operaciones');
+        navHTML += createNavItem('campus', 'Capacitación', 'ph-graduation-cap');
+        navHTML += createNavItem('voluntai', 'Asistencia', 'ph-clipboard-text');
+    } else if (role === ROLES.ORG_TURNOS) {
+        navHTML += buildSectionHeader('Logística');
+        navHTML += createNavItem('voluntai', 'Turnos AI', 'ph-calendar-check');
+    } else if (role === ROLES.COMMS) {
+        navHTML += buildSectionHeader('Difusión');
+        navHTML += createNavItem('voluntai', 'Mensajería', 'ph-paper-plane-right');
+    } else if (role === ROLES.RETENCION) {
+        navHTML += buildSectionHeader('Fidelización');
+        navHTML += createNavItem('continuai', 'Riesgo', 'ph-chart-line-up');
+    }
+
+    navContainer.innerHTML = navHTML;
+}
+
+function buildSectionHeader(title) {
+    return `<p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 mt-6">${title}</p>`;
+}
+
+function createNavItem(target, label, icon, activeClasses = 'text-gray-400 hover:bg-gray-800') {
+    return `
+        <button onclick="navigate('${target}')" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeClasses}" data-target="${target}">
+            <i class="ph-fill ${icon} text-xl"></i>
+            <span>${label}</span>
+        </button>
+    `;
+}
+
+// --- Navigation Router ---
+function navigate(tabName) {
+    // Update Sidebar Active State
+    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+        if (btn.dataset.target === tabName) {
+            btn.classList.remove('text-gray-400', 'bg-transparent');
+            btn.classList.add('text-white', 'bg-gray-800');
+        } else {
+            btn.classList.add('text-gray-400', 'bg-transparent');
+            btn.classList.remove('text-white', 'bg-gray-800');
+        }
+    });
+
+    const content = document.getElementById('admin-content');
+    const role = state.user.role;
+
+    if (tabName === 'dashboard') {
+        if (role === ROLES.COORD) content.innerHTML = renderDashboardCoord();
+        else if (role === ROLES.JEFE_SOCIAL) content.innerHTML = renderDashboardSocial();
+        else if (role === ROLES.ADMIN_PROG) content.innerHTML = renderDashboardProg();
+        else if (role === ROLES.ORG_TURNOS) content.innerHTML = renderDashboardTurnos();
+        else if (role === ROLES.COMMS) content.innerHTML = renderDashboardComms();
+        else if (role === ROLES.RETENCION) content.innerHTML = renderDashboardRetencion();
+    }
+    else if (tabName === 'voluntai') content.innerHTML = renderVoluntai();
+    else if (tabName === 'continuai') content.innerHTML = renderContinuai();
+    else if (tabName === 'campus') content.innerHTML = renderCampus();
+    else if (tabName === 'match') content.innerHTML = renderMatch();
+    else content.innerHTML = `<div class="p-10 text-center text-gray-500">Módulo en construcción.</div>`;
+}
+
+// --- Module Renderers (Customized per Role) ---
+function renderVoluntai() {
+    const role = state.user.role;
+    if (role === ROLES.ORG_TURNOS) {
+        return `
+            <div class="fade-in space-y-6">
+                <div class="bg-brand-blue/10 p-6 rounded-3xl border border-brand-blue/20 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-brand-blue">Voluntai: Gestor de Turnos</h2>
+                        <p class="text-brand-blue/80 text-sm">IA optimizando cobertura en tiempo real.</p>
+                    </div>
+                    <i class="ph-fill ph-calendar-check text-4xl text-brand-blue"></i>
+                </div>
+                <div class="bg-gray-900 rounded-2xl border border-gray-800 p-6">
+                    <h3 class="font-bold mb-4 text-white">Alertas de Cobertura</h3>
+                    <div class="space-y-3">
+                        <div class="p-4 bg-red-900/20 border border-red-500/30 rounded-xl flex justify-between items-center">
+                            <div>
+                                <p class="text-red-400 font-bold text-sm">Falta 1 Kinesiólogo (Mañana AM)</p>
+                                <p class="text-gray-500 text-xs">Voluntai encontró 3 candidatos disponibles.</p>
+                            </div>
+                            <button class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-500">Auto-Asignar</button>
+                        </div>
+                            <div class="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl flex justify-between items-center">
+                            <div>
+                                <p class="text-yellow-400 font-bold text-sm">Baja confirmada: Evento Cierre</p>
+                                <p class="text-gray-500 text-xs">Se requiere reemplazo urgente.</p>
+                            </div>
+                            <button class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-yellow-500">Buscar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (role === ROLES.COMMS) {
+        return `
+            <div class="fade-in space-y-6">
+                <div class="bg-brand-cyan/10 p-6 rounded-3xl border border-brand-cyan/20 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-brand-cyan">Voluntai: Redactor IA</h2>
+                        <p class="text-brand-cyan/80 text-sm">Generación de comunicados y alertas.</p>
+                    </div>
+                    <i class="ph-fill ph-chat-teardrop-text text-4xl text-brand-cyan"></i>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-900 rounded-2xl border border-gray-800 p-6">
+                        <h3 class="font-bold mb-2 text-white">Generar Mensaje</h3>
+                        <textarea class="w-full bg-gray-800 rounded-xl p-3 text-sm text-gray-300 mb-2 h-32" placeholder="Describe el tema (ej: Agradecimiento por evento de ayer)..."></textarea>
+                        <button class="w-full bg-brand-cyan text-white py-2 rounded-lg font-bold text-sm hover:bg-cyan-600">Generar Borrador con IA</button>
+                    </div>
+                    <div class="bg-gray-900 rounded-2xl border border-gray-800 p-6 flex flex-col justify-center items-center text-center">
+                        <i class="ph-duotone ph-sparkle text-4xl text-brand-cyan mb-2"></i>
+                        <p class="text-gray-400 text-sm">El borrador generado aparecerá aquí para tu revisión.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    return genericModuleRender('Voluntai', 'Asistente de IA Operativa', 'ph-robot', 'brand-blue');
+}
+
+function renderContinuai() {
+    const role = state.user.role;
+    if (role === ROLES.RETENCION) {
+        return `
+            <div class="fade-in space-y-6">
+                <div class="bg-brand-purple/10 p-6 rounded-3xl border border-brand-purple/20 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-brand-purple">Continuai: Radar de Riesgo</h2>
+                        <p class="text-brand-purple/80 text-sm">Identificación temprana de deserción.</p>
+                    </div>
+                    <i class="ph-fill ph-chart-line-down text-4xl text-brand-purple"></i>
+                </div>
+                <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-800 text-xs uppercase font-bold text-gray-500">
+                            <tr>
+                                <th class="p-4">Voluntario</th>
+                                <th class="p-4">Prob. Abandono</th>
+                                <th class="p-4">Factor Principal</th>
+                                <th class="p-4 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            <tr>
+                                <td class="p-4 font-bold text-white">Pedro Soto</td>
+                                <td class="p-4 text-red-500 font-bold">88%</td>
+                                <td class="p-4">Ausencia sin aviso (3x)</td>
+                                <td class="p-4 text-right"><button class="text-brand-purple hover:underline">Contactar</button></td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-bold text-white">Maria L.</td>
+                                <td class="p-4 text-yellow-500 font-bold">65%</td>
+                                <td class="p-4">Baja participación</td>
+                                <td class="p-4 text-right"><button class="text-brand-purple hover:underline">Ver Perfil</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    return genericModuleRender('Continuai', 'Predicción de Retención', 'ph-chart-line-up', 'brand-purple');
+}
+
+function renderCampus() {
+    const role = state.user.role;
+    if (role === ROLES.ADMIN_PROG) {
+        return `
+            <div class="fade-in space-y-6">
+                <div class="bg-brand-green/10 p-6 rounded-3xl border border-brand-green/20 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-brand-green">Campus: Gestión de Cursos</h2>
+                        <p class="text-brand-green/80 text-sm">Administración de material educativo.</p>
+                    </div>
+                    <i class="ph-fill ph-books text-4xl text-brand-green"></i>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-900 p-6 rounded-2xl border border-dashed border-gray-700 flex flex-col items-center justify-center text-center cursor-pointer hover:border-brand-green hover:bg-gray-800 transition">
+                        <i class="ph-bold ph-plus text-3xl text-gray-500 mb-2"></i>
+                        <h3 class="font-bold text-white">Crear Nuevo Curso</h3>
+                        <p class="text-xs text-gray-500">Subir video o PDF</p>
+                    </div>
+                    <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+                        <h3 class="font-bold text-white mb-2">Protocolo Kine 2024</h3>
+                        <div class="w-full bg-gray-800 h-2 rounded-full mb-2"><div class="bg-brand-green h-2 rounded-full w-3/4"></div></div>
+                        <p class="text-xs text-gray-500">75% Completado por equipo</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    return genericModuleRender('Campus', 'Gestión de Capacitación', 'ph-graduation-cap', 'brand-green');
+}
+
+function renderMatch() {
+    const role = state.user.role;
+    if (role === ROLES.JEFE_SOCIAL) {
+        return `
+            <div class="fade-in space-y-6">
+                <div class="bg-brand-orange/10 p-6 rounded-3xl border border-brand-orange/20 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-brand-orange">Match: Constructor de Equipos</h2>
+                        <p class="text-brand-orange/80 text-sm">Simulación de grupos diversos.</p>
+                    </div>
+                    <i class="ph-fill ph-users-four text-4xl text-brand-orange"></i>
+                </div>
+                <div class="bg-gray-900 rounded-2xl border border-gray-800 p-6">
+                    <h3 class="font-bold mb-4 text-white">Configuración de Equipo</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Diversidad Generacional</label>
+                            <input type="range" class="w-full accent-brand-orange">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Mix de Habilidades</label>
+                            <input type="range" class="w-full accent-brand-orange">
+                        </div>
+                    </div>
+                    <button class="w-full bg-brand-orange text-white py-2 rounded-lg font-bold text-sm hover:bg-orange-600">Simular Equipos</button>
+                </div>
+                
+                <div class="bg-gray-900 rounded-2xl border border-gray-800 p-6">
+                     <h3 class="font-bold text-white mb-4">Sugerencias Automáticas</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-800 rounded-xl border border-gray-700 flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-white">Grupo A (Recepción)</h4>
+                                <p class="text-xs text-gray-400">Mix: 2 Nuevos + 1 Senior + 1 Profesional Salud</p>
+                            </div>
+                            <span class="text-brand-orange text-xs font-bold border border-brand-orange px-2 py-1 rounded">Match 98%</span>
+                        </div>
+                        <div class="p-4 bg-gray-800 rounded-xl border border-gray-700 flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-white">Grupo B (Logística)</h4>
+                                <p class="text-xs text-gray-400">Mix: 50% Hombres / 50% Mujeres</p>
+                            </div>
+                            <span class="text-brand-orange text-xs font-bold border border-brand-orange px-2 py-1 rounded">Match 92%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    return genericModuleRender('Match', 'Integración de Equipos', 'ph-users-three', 'brand-orange');
+}
+
+function genericModuleRender(title, subtitle, icon, colorClass) {
+    return `
+        <div class="fade-in space-y-6">
+            <div class="flex items-center gap-4 text-${colorClass}">
+                <i class="ph-fill ${icon} text-4xl"></i>
+                <div>
+                    <h2 class="text-3xl font-bold text-white">${title}</h2>
+                    <p class="text-gray-400">${subtitle}</p>
+                </div>
+            </div>
+            <div class="bg-gray-900 rounded-2xl border border-gray-800 p-10 flex flex-col items-center justify-center min-h-[400px]">
+                <p class="text-gray-500">Contenido completo del módulo ${title} disponible.</p>
+                <p class="text-xs text-gray-600 mt-2">Acceso autorizado para: ${state.user.role}</p>
+            </div>
+        </div>
+    `;
+}
+
+// --- Init ---
+renderView('login');
